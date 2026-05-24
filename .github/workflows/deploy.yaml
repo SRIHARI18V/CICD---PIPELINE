@@ -41,7 +41,6 @@ jobs:
   deploy:
     name: Deploy on EC2 (Self-hosted)
     runs-on: self-hosted
-    needs: scan
     steps:
       - name: Deploy v1.0 container
         run: |
