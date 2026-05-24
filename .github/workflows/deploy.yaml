@@ -30,13 +30,13 @@ jobs:
         run: |
           GIT_SHA=$(git rev-parse --short HEAD)
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:$GIT_SHA .
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:$GIT_SHA ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:latest
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:$GIT_SHA ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:v1.0
 
       - name: Push Docker Image
         run: |
           GIT_SHA=$(git rev-parse --short HEAD)
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:$GIT_SHA
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:v1.0
 
   scan:
     name: Security Scan with Trivy
@@ -56,19 +56,19 @@ jobs:
 
       - name: Scan Docker Image
         run: |
-          trivy image --exit-code 0 --severity HIGH,CRITICAL ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:latest
-          trivy image --exit-code 1 --severity CRITICAL ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:latest || echo "⚠️ Critical vulnerabilities found"
+          trivy image --exit-code 0 --severity HIGH,CRITICAL ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:v1.0
+          trivy image --exit-code 1 --severity CRITICAL ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:v1.0 || echo "⚠️ Critical vulnerabilities found"
 
   deploy:
     name: Deploy on EC2 (Self-hosted)
     runs-on: self-hosted
     needs: scan
     steps:
-      - name: Deploy latest container
+      - name: Deploy v1.0 container
         run: |
           docker stop flask-app || true
           docker rm flask-app || true
           sleep 5
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:latest
-          docker run -d --name flask-app -p 5000:5000 ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:latest
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:v1.0
+          docker run -d --name flask-app -p 5000:5000 ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:v1.0
           docker system prune -f
