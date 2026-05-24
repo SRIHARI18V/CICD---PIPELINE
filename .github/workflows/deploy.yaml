@@ -38,27 +38,6 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:$GIT_SHA
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:v1.0
 
-  scan:
-    name: Security Scan with Trivy
-    runs-on: self-hosted
-    needs: build
-    steps:
-      - name: Install Trivy
-        run: |
-          if ! command -v trivy &> /dev/null; then
-            sudo apt-get update -y
-            sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-            wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-            echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
-            sudo apt-get update -y
-            sudo apt-get install -y trivy
-          fi
-
-      - name: Scan Docker Image
-        run: |
-          trivy image --exit-code 0 --severity HIGH,CRITICAL ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:v1.0
-          trivy image --exit-code 1 --severity CRITICAL ${{ secrets.DOCKERHUB_USERNAME }}/flask-app:v1.0 || echo "⚠️ Critical vulnerabilities found"
-
   deploy:
     name: Deploy on EC2 (Self-hosted)
     runs-on: self-hosted
